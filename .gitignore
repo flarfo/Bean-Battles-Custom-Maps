@@ -1,0 +1,4 @@
+# Ignore all folders with a period in front
+.*/
+# Ignore my temp folder
+BeanBattlesMapMaker/obj/Debug/TempPE/

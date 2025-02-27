@@ -34,6 +34,8 @@ namespace BeanBattlesMapMaker
         public static Dictionary<GameObject, Tuple<string, int>> mapsDict = new Dictionary<GameObject, Tuple<string,int>>();
 
         public static int graceTime = 0;
+        public static Vector2 originalwinSize = Vector2.zero;
+        public static int windowCount = 0;
 
         public void Awake()
         {
@@ -51,7 +53,7 @@ namespace BeanBattlesMapMaker
             AssetBundle uiBundle = GetAssetBundleFromResource("mapselector");
 
             selectorUI = Instantiate(uiBundle.LoadAsset<GameObject>("MapSelectorRoot.prefab"));
-            selectorUI.transform.parent = GameObject.Find("MenuCanvas").transform;
+            selectorUI.transform.SetParent(GameObject.Find("MenuCanvas").transform, false);
 
             mapButton = uiBundle.LoadAsset<GameObject>("MapButton.prefab");
 
@@ -86,6 +88,32 @@ namespace BeanBattlesMapMaker
                 optionsScreen.SetActive(true);
             });
 
+            Button minimizeButton = GameObject.Find("TWindowButton").GetComponent<Button>();
+            minimizeButton.onClick.AddListener(delegate ()
+            {
+                var winSize = GameObject.Find("MapSelector").GetComponent<RectTransform>();
+                //Set windowsize counter upon init for later reference
+                if (windowCount == 0)
+                {
+                    originalwinSize = winSize.sizeDelta;
+                    windowCount += 1;
+                }
+                
+                //Debug.Log("Window size is: "+winSize.sizeDelta);
+                // If windowsize is the initial large size
+                if (winSize.sizeDelta.y == originalwinSize.y)
+                {
+                    //Make it squash
+                    winSize.sizeDelta = new Vector2(winSize.sizeDelta.x, 0);
+                }
+                // If windowsize is different from init size
+                else if (winSize.sizeDelta.y != originalwinSize.y)
+                {
+                    // Put it back to normal
+                    winSize.sizeDelta = originalwinSize;
+                }
+            });
+
             for (int i = 0; i < mapDirectories.Length; i++)
             {
                 GameObject newMapButton = Instantiate(mapButton);
@@ -100,7 +128,7 @@ namespace BeanBattlesMapMaker
                 mapImage.texture = tex;
 
                 GameObject selectorGrid = GameObject.Find("SelectorGrid");
-                newMapButton.transform.parent = selectorGrid.transform;
+                newMapButton.transform.SetParent(selectorGrid.transform, false);
 
                 string buttonText = Path.GetFileName(mapDirectories[i]);
 
