@@ -1,10 +1,12 @@
-﻿using System;
+﻿using GG.BeanBattles;
+using GG.Shared;
+using HarmonyLib;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 using System.Reflection;
-using HarmonyLib;
-using MatchUp;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -78,28 +80,9 @@ namespace BeanBattlesMapMaker
         }
 
         [HarmonyPatch(typeof(CustomNetworkManager), "OnJoinMatch")]
-        static void Postfix(CustomNetworkManager __instance)
+        static bool Prefix(bool success, ref GG.Shared.Match match, CustomNetworkManager __instance)
         {
-            SetupMap.isServer = false;
-        }
-
-        [HarmonyPatch(typeof(Matchmaker), "CreateMatch", new Type[] { typeof(int), typeof(Dictionary<string, MatchData>), typeof(Action<bool, Match>) })]
-        [HarmonyPostfix]
-        static void MatchNamePatch(ref Dictionary<string, MatchData> matchData)
-        {
-            if (SetupMap.selectedMapName != null)
-            {
-                Debug.Log("MatchData Edited");
-
-                matchData["Match Name"] += " | CM: " + SetupMap.selectedMapName;
-            }
-        }
-
-        [HarmonyPatch(typeof(Matchmaker), "JoinMatch")]
-        [HarmonyPrefix]
-        static bool MatchNameJoin(ref Match match)
-        {
-            string matchName = match.matchData["Match Name"].ToString();
+            string matchName = match.Name;
 
             if (matchName.Contains("| CM: "))
             {
@@ -114,12 +97,24 @@ namespace BeanBattlesMapMaker
                     return true;
                 }
 
-                GameObject.Find("NetworkManager").GetComponent<CustomNetworkManager>().gameLog.NewLog("Custom Map not Found!");
+                __instance.gameLog.NewLog("Custom Map not Found!");
 
                 return false;
             }
 
+            SetupMap.isServer = false;
             return true;
+        }
+
+        [HarmonyPatch(typeof(GGServerManager), "CreateMatch")]
+        [HarmonyPrefix]
+        static void MatchNamePatch(ref string name)
+        {
+            if (SetupMap.selectedMapName != null)
+            {
+                Debug.Log("MatchData Edited");
+                name += " | CM: " + SetupMap.selectedMapName;
+            }
         }
 
         [HarmonyPatch(typeof(Health), "Respawn")]
